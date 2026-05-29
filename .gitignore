@@ -427,3 +427,51 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+
+# Environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Data — raw source files are tracked; large processed/output files are not
+data/processed/
+data/features/
+data/outputs/
+
+# Model artefacts — registry is tracked; binary weights are not
+models/*.pkl
+models/*.joblib
+models/checkpoints/
+
+# Reports — generated outputs, not source
+reports/charts/
+reports/*.pdf
+reports/*.html
+# Keep the markdown report if you want to commit it
+# reports/final_report.md
+
+# Memory — runtime state, not source
+memory/state.json
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+
