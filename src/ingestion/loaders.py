@@ -7,10 +7,14 @@ from dotenv import load_dotenv
 SUPPORTED_EXTENSIONS = {".csv", ".xlsx"}
 load_dotenv()
 
+PROJECT_ROOT = Path(__file__).parents[2]
+
 
 def load_file():
     file_path = os.getenv("file_path")
     path = Path(file_path)
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
     if not path.exists():
         raise FileNotFoundError(f"Data file not found: {path}")
 
