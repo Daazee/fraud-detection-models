@@ -1,14 +1,12 @@
 from imblearn.pipeline import Pipeline
 from imblearn.over_sampling import SMOTE
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
+from xgboost import XGBClassifier
 
 
 def build_pipeline() -> Pipeline:
     return Pipeline([
-        ("smote",  SMOTE(random_state=42)),
-        ("scaler", StandardScaler()),
-        ("model",  LogisticRegression(max_iter=1000, random_state=42)),
+        ("smote", SMOTE(random_state=42)),
+        ("model", XGBClassifier(random_state=42, eval_metric="logloss", n_jobs=-1)),
     ])
 
 
