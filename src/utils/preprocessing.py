@@ -10,13 +10,14 @@ PROJECT_ROOT = Path(__file__).parents[2]
 
 TARGET = "IS_FRAUD"
 ID_COLS = ["TX_ID"]
+CONSTANT_COLS = ["TX_TYPE"]  # Only one unique value, no predictive power
 LEAKY_COLS = ["ALERT_ID"]
 CORR_THRESHOLD = 0.8
 SKEW_THRESHOLD = 1.0
 
 
 def drop_columns(df: pd.DataFrame) -> pd.DataFrame:
-    cols = [c for c in ID_COLS + LEAKY_COLS if c in df.columns]
+    cols = [c for c in ID_COLS + LEAKY_COLS + CONSTANT_COLS if c in df.columns]
     return df.drop(columns=cols)
 
 
