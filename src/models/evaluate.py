@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
-    classification_report,
     confusion_matrix,
     roc_auc_score,
     average_precision_score,
@@ -34,9 +33,11 @@ def _print_results(metrics: dict, y_test, y_pred) -> None:
     print(f"\n{'=' * 58}")
     print(f"  {metrics['model']}")
     print(f"{'=' * 58}")
-    print(classification_report(y_test, y_pred, target_names=["Legit", "Fraud"]))
+    print(f"  Precision          : {metrics['precision']:.4f}")
+    print(f"  Recall             : {metrics['recall']:.4f}")
+    print(f"  F1-Score           : {metrics['f1_score']:.4f}")
     print(f"  ROC-AUC            : {metrics['roc_auc']:.4f}")
-    print(f"  PR-AUC             : {metrics['pr_auc']:.4f}  ← primary metric")
+    print(f"  PR-AUC             : {metrics['pr_auc']:.4f}  <- primary metric")
     print(f"  False Positive Rate: {metrics['fpr']:.4f}  (legit flagged as fraud)")
     print(f"  False Negative Rate: {metrics['fnr']:.4f}  (fraud missed)")
     cm = confusion_matrix(y_test, y_pred)
