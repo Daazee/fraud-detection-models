@@ -2,6 +2,7 @@ import argparse
 import pandas as pd
 from pathlib import Path
 from sklearn.model_selection import train_test_split
+from sklearn.dummy import DummyClassifier
 
 from utils.preprocessing import wrangle_data
 from models.logistic_regression import train as train_lr
@@ -53,11 +54,16 @@ def main():
     print("Training Isolation Forest...")
     iso = train_if(X_train)
 
-  #Evaluation
+    print("Training Dummy Baseline...")
+    dummy = DummyClassifier(strategy="most_frequent", random_state=42)
+    dummy.fit(X_train, y_train)
+
+    # Evaluation
     results = []
-    results.append(evaluate(lr,  X_test, y_test, "Logistic Regression"))
-    results.append(evaluate(rf,  X_test, y_test, "Random Forest"))
-    results.append(evaluate(xgb, X_test, y_test, "XGBoost"))
+    results.append(evaluate(dummy, X_test, y_test, "Dummy (Baseline)"))
+    results.append(evaluate(lr,    X_test, y_test, "Logistic Regression"))
+    results.append(evaluate(rf,    X_test, y_test, "Random Forest"))
+    results.append(evaluate(xgb,   X_test, y_test, "XGBoost"))
     results.append(evaluate_anomaly(iso, X_test, y_test, "Isolation Forest"))
 
     identify_best_model(results)
