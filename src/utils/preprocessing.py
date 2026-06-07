@@ -43,6 +43,22 @@ def drop_correlated_features(
 
     return df.drop(columns=list(to_drop))
 
+def add_velocity_features(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["SENDER_STEP_COUNT"] = (
+        df.groupby(["SENDER_ACCOUNT_ID", "TIMESTAMP"])["TX_AMOUNT"]
+        .transform("count")
+    )
+    df["SENDER_TOTAL_COUNT"] = (
+        df.groupby("SENDER_ACCOUNT_ID")["TX_AMOUNT"]
+        .transform("count")
+    )
+    df["SENDER_RECEIVER_PAIR_COUNT"] = (
+        df.groupby(["SENDER_ACCOUNT_ID", "RECEIVER_ACCOUNT_ID"])["TX_AMOUNT"]
+        .transform("count")
+    )
+    return df
+
 
 def _outlier_fraud_correlated(col: pd.Series, fraud: pd.Series) -> bool:
     Q1, Q3 = col.quantile(0.25), col.quantile(0.75)
@@ -99,6 +115,7 @@ def wrangle_data(save: bool = True) -> pd.DataFrame:
     df = drop_correlated_features(df)
     df = treat_outliers(df)
     df = apply_log_transform(df)
+    df = add_velocity_features(df)
     df = encode_categoricals(df)
     df = encode_target(df)
 
