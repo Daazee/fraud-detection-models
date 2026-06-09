@@ -5,10 +5,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.dummy import DummyClassifier
 
 from utils.preprocessing import wrangle_data
-from models.logistic_regression import train as train_lr
-from models.random_forest import train as train_rf
-from models.xgboost_model import train as train_xgb
-from models.isolation_forest import train as train_if
+from models.logistic_regression import train as train_linear_regression
+from models.random_forest import train as train_random_forest
+from models.xgboost_model import train as train_xgboost
+from models.isolation_forest import train as train_isolation_forest
 from models.evaluate import evaluate, evaluate_anomaly, identify_best_model
 
 PROCESSED = Path(__file__).parents[1] / "data" / "processed" / "transactions_processed.csv"
@@ -43,16 +43,16 @@ def main():
     print(f"Fraud rate — train: {y_train.mean():.4%}  test: {y_test.mean():.4%}\n")
 
     print("Training Logistic Regression...")
-    lr = train_lr(X_train, y_train)
+    lr = train_linear_regression(X_train, y_train)
 
     print("Training Random Forest...")
-    rf = train_rf(X_train, y_train)
+    rf = train_random_forest(X_train, y_train)
 
     print("Training XGBoost...")
-    xgb = train_xgb(X_train, y_train)
+    xgb = train_xgboost(X_train, y_train)
 
     print("Training Isolation Forest...")
-    iso = train_if(X_train)
+    iso = train_isolation_forest(X_train)
 
     print("Training Dummy Baseline...")
     dummy = DummyClassifier(strategy="most_frequent", random_state=42)
