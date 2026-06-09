@@ -62,7 +62,7 @@ def evaluate(model, X_test, y_test, model_name: str = "Model") -> dict:
     return metrics
 
 
-def evaluate_anomaly(model, X_test, y_test, model_name: str = "Isolation Forest") -> dict:
+def evaluate_anomaly(model, X_test, y_test, model_name) -> dict:
     # -1 = anomaly (fraud=1), 1 = normal (legit=0)
     y_pred = np.where(model.predict(X_test) == -1, 1, 0)
     # Negate: higher score = more anomalous = higher fraud probability
