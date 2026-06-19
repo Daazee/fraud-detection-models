@@ -12,7 +12,7 @@ def build_model() -> IsolationForest:
 
 
 def train(X_train) -> IsolationForest:
-    # Unsupervised — no y_train; learns the distribution of normal transactions
+    # Unsupervised model. There is no y_train; learns the distribution of normal transactions
     model = build_model()
     model.fit(X_train)
     return model
