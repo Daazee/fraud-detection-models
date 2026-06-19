@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.dummy import DummyClassifier
 
 from utils.preprocessing import wrangle_data
-from models.logistic_regression import train as train_linear_regression
+from models.logistic_regression import train as train_logistic_regression
 from models.random_forest import train as train_random_forest
 from models.xgboost_model import train as train_xgboost
 from models.isolation_forest import train as train_isolation_forest
@@ -43,7 +43,7 @@ def main():
     print(f"Fraud rate — train: {y_train.mean():.4%}  test: {y_test.mean():.4%}\n")
 
     print("Training Logistic Regression...")
-    lr = train_linear_regression(X_train, y_train)
+    lr = train_logistic_regression(X_train, y_train)
 
     print("Training Random Forest...")
     rf = train_random_forest(X_train, y_train)
