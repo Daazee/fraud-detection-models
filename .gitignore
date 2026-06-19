@@ -454,7 +454,7 @@ models/checkpoints/
 
 # Reports — generated outputs, not source
 reports/charts/
-reports/*.pdf
+# reports/*.pdf
 reports/*.html
 # Keep the markdown report if you want to commit it
 # reports/final_report.md
