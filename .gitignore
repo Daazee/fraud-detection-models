@@ -464,7 +464,6 @@ memory/state.json
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb
 
 # OS
 .DS_Store
