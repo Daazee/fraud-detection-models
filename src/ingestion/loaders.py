@@ -12,6 +12,8 @@ PROJECT_ROOT = Path(__file__).parents[2]
 
 def load_file():
     file_path = os.getenv("file_path")
+    if not file_path:
+        raise ValueError("Environment variable 'file_path' is not set.")
     path = Path(file_path)
     if not path.is_absolute():
         path = PROJECT_ROOT / path
