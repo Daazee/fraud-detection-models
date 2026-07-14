@@ -131,6 +131,7 @@ Quick reference to evaluation file: [Evaluation utilities](src/models/evaluate.p
 
 ## Troubleshooting & Tips
 
+- If `.\.venv\Scripts\activate` fails, switch from powershell to command prompt.
 - If `main.py --preprocess` fails, check that the raw CSVs exist in `data/raw/` and that `.env` paths are correct.
 - For memory-heavy operations (XGBoost training), consider increasing available RAM or using a smaller sample during experimentation.
 
