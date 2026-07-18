@@ -58,7 +58,7 @@ def evaluate(model, X_test, y_test, model_name: str = "Model") -> dict:
         y_score = y_pred.astype(float)
 
     metrics = _compute_metrics(y_test, y_pred, y_score, model_name)
-    _print_results(metrics, y_test, y_pred)
+    #_print_results(metrics, y_test, y_pred)
     return metrics
 
 
@@ -69,7 +69,7 @@ def evaluate_anomaly(model, X_test, y_test, model_name) -> dict:
     y_score = -model.decision_function(X_test)
 
     metrics = _compute_metrics(y_test, y_pred, y_score, model_name)
-    _print_results(metrics, y_test, y_pred)
+    #_print_results(metrics, y_test, y_pred)
     return metrics
 
 
@@ -90,3 +90,22 @@ def identify_best_model(results: list[dict]) -> None:
     df["rank"] = df["pr_auc"].rank(ascending=False) + df["f1_score"].rank(ascending=False)
     overall_best = df["rank"].idxmin()
     print(f"\n  Overall best (PR-AUC + F1): {overall_best}")
+    return overall_best
+
+def print_final_results(results: list[dict]) -> None:
+    df = pd.DataFrame(results).set_index("model")
+
+    best_pr  = df["pr_auc"].idxmax()
+    best_f1  = df["f1_score"].idxmax()
+
+    print("\n\n── Model Comparison ─────────────────────────────────────")
+    print(df[["precision", "recall", "f1_score", "fpr", "fnr", "roc_auc", "pr_auc"]].to_string())
+
+    print("\n── Best Model ───────────────────────────────────────────")
+    print(f"  By PR-AUC   : {best_pr:<25} ({df.loc[best_pr,  'pr_auc']:.4f})")
+    print(f"  By F1-Score : {best_f1:<25} ({df.loc[best_f1,  'f1_score']:.4f})")
+
+    # Overall winner: ranks by both metrics combined
+    final_best = df["pr_auc"].rank(ascending=False).idxmin()
+    print(f"\n  Final best (PR-AUC): {final_best}")
+
