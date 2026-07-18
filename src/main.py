@@ -37,10 +37,15 @@ def main():
     y = df["IS_FRAUD"]
     print(f"Loaded: {X.shape[0]:,} rows, {X.shape[1]} features")
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    X_train_full, X_test, y_train_full, y_test = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=42
     )
-    print(f"Train: {X_train.shape[0]:,}  |  Test: {X_test.shape[0]:,}")
+
+    X_train, X_validation, y_train, y_validation = train_test_split(
+        X_train_full, y_train_full, test_size=0.2, stratify=y_train_full, random_state=42
+    )
+
+    print(f"Train: {X_train.shape[0]:,}  |  Validation: {X_validation.shape[0]:,}  | Test: {X_test.shape[0]:,}")
     print(f"Fraud rate — train: {y_train.mean():.4%}  test: {y_test.mean():.4%}\n")
 
     print("Training Logistic Regression...")
