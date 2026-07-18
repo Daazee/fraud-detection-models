@@ -66,14 +66,32 @@ def main():
 
     # Evaluation
     results = []
-    results.append(evaluate(dummy, X_test, y_test, "Dummy (Baseline)"))
-    results.append(evaluate(lr,    X_test, y_test, "Logistic Regression"))
-    results.append(evaluate(rf,    X_test, y_test, "Random Forest"))
-    results.append(evaluate(xgb,   X_test, y_test, "XGBoost"))
-    results.append(evaluate_anomaly(iso, X_test, y_test, "Isolation Forest"))
+    results.append(evaluate(dummy, X_validation, y_validation, "Dummy (Baseline)"))
+    results.append(evaluate(lr, X_validation, y_validation, "Logistic Regression"))
+    results.append(evaluate(rf, X_validation, y_validation, "Random Forest"))
+    results.append(evaluate(xgb, X_validation, y_validation, "XGBoost"))
+    results.append(evaluate_anomaly(iso, X_validation, y_validation, "Isolation Forest"))
 
-    identify_best_model(results)
+    overall_best_classifier_model_name = identify_best_model(results)
 
+    #Hybrid model using ensemble for best performing classifier and isolation forest
+    best_model = (
+                lr if overall_best_classifier_model_name == "Logistic Regression" 
+                else rf if overall_best_classifier_model_name == "Random Forest" else 
+                xgb if overall_best_classifier_model_name == "XGBoost" else None
+    )
 
+    # --- Hybrid: fuse best_model + iso, tuning w dynamically on X_validation ---
+    print("Hybrid Model...")
+    hybrid = train_hybrid_model(best_model, iso, X_validation, y_validation)
+
+    # --- Final, one-time evaluation on X_test ---
+    print("\n=== Final evaluation on held-out X_test ===")
+    final_results = []
+    final_results.append(evaluate(best_model, X_test, y_test, overall_best_classifier_model_name))
+    final_results.append(evaluate_anomaly(iso, X_test, y_test, "Isolation Forest"))
+    final_results.append(evaluate(hybrid, X_test, y_test, "Hybrid (Weighted Average)"))
+
+    print_final_results(final_results)
 if __name__ == "__main__":
     main()
