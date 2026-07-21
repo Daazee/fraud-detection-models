@@ -50,6 +50,8 @@ class WeightedAverageHybrid:
             w_grid = np.arange(0.0, 1.01, 0.05)
 
         clf_score, iso_score = self._raw_scores(X_val)
+
+        #normalise scores to [0, 1] via min-max scaling using ranges fit on validation data
         clf_norm, iso_norm = self._normalise(clf_score, iso_score, fit_ranges=True)
 
         best_w, best_pr_auc = None, -np.inf
