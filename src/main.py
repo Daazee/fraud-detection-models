@@ -10,7 +10,7 @@ from models.random_forest import train as train_random_forest
 from models.xgboost_model import train as train_xgboost
 from models.isolation_forest import train as train_isolation_forest
 from models.evaluate import evaluate, evaluate_anomaly, identify_best_model, print_final_results
-from models.hybrid_model import train as train_hybrid_model
+from models.weighted_hybrid_model import train as train_hybrid_model
 
 PROCESSED = Path(__file__).parents[1] / "data" / "processed" / "transactions_processed.csv"
 
