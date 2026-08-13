@@ -87,14 +87,14 @@ pip install -r requirements.txt
 1. Run preprocessing to clean data and produce `data/processed/transactions_processed.csv`:
 
 ```bash
-python main.py --preprocess
+python src\main.py --preprocess
 # Run preprocessing for data cleanup and feature engineering before training.
 ```
 
 2. Train and evaluate models using the preprocessed data:
 
 ```bash
-python main.py
+python src\main.py
 # Use preprocessed data to train and evaluate models
 ```
 
