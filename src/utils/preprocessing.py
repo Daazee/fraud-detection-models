@@ -112,11 +112,11 @@ def encode_target(df: pd.DataFrame, target: str = TARGET) -> pd.DataFrame:
 
 def wrangle_data(save: bool = True) -> pd.DataFrame:
     df = load_file()
+    df = add_velocity_features(df)
     df = drop_columns(df)
     df = drop_correlated_features(df)
     df = treat_outliers(df)
     df = apply_log_transform(df)
-    df = add_velocity_features(df)
     df = encode_categoricals(df)
     df = encode_target(df)
 
