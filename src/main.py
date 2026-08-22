@@ -12,7 +12,7 @@ from models.isolation_forest import train as train_isolation_forest
 from models.evaluate import evaluate, evaluate_anomaly, identify_best_model, print_final_results
 from models.weighted_hybrid_model import train as train_hybrid_model
 
-PROCESSED = Path(__file__).parents[1] / "data" / "processed" / "transactions_processed.csv"
+PROCESSED = Path(__file__).parents[1] / "data" / "processed" / "merged_transactions_accounts_processed.csv"
 
 
 def parse_args():
@@ -37,13 +37,15 @@ def main():
     y = df["IS_FRAUD"]
     print(f"Loaded: {X.shape[0]:,} rows, {X.shape[1]} features")
 
-    X_train_full, X_test, y_train_full, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=42
-    )
+   
+    cutoff = int(len(X) * 0.8)
+    X_train_full, y_train_full = X.iloc[: cutoff], y.iloc[:cutoff]
+    X_test, y_test =  X.iloc[cutoff: ], y.iloc[cutoff:]
 
-    X_train, X_validation, y_train, y_validation = train_test_split(
-        X_train_full, y_train_full, test_size=0.2, stratify=y_train_full, random_state=42
-    )
+    cutoff_train_val = int(len(X_train_full) * 0.8)
+    X_train, y_train = X_train_full.iloc[:cutoff_train_val], y_train_full.iloc[:cutoff_train_val]
+    X_validation, y_validation = X_train_full.iloc[cutoff_train_val:], y_train_full.iloc[cutoff_train_val:]
+
 
     print(f"Train: {X_train.shape[0]:,}  |  Validation: {X_validation.shape[0]:,}  | Test: {X_test.shape[0]:,}")
     print(f"Fraud rate — train: {y_train.mean():.4%}  test: {y_test.mean():.4%}\n")
