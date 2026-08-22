@@ -1,9 +1,8 @@
+import os
+from pathlib import Path
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from scipy.stats import chi2_contingency
-from sklearn.preprocessing import StandardScaler
-
 from ingestion.loaders import load_file
 
 PROJECT_ROOT = Path(__file__).parents[2]
@@ -18,7 +17,7 @@ SKEW_THRESHOLD = 1.0
 
 
 def drop_columns(df: pd.DataFrame) -> pd.DataFrame:
-    cols = [c for c in ID_COLS + LEAKY_COLS + CONSTANT_COLS + ENGINEERED_SOURCE_COLS  if c in df.columns]
+    cols = [c for c in ID_COLS + LEAKY_COLS + CONSTANT_COLS  if c in df.columns]
     return df.drop(columns=cols)
 
 
@@ -110,8 +109,73 @@ def encode_target(df: pd.DataFrame, target: str = TARGET) -> pd.DataFrame:
     df[target] = df[target].astype(int)
     return df
 
+
+def load_merged_transactions_accounts():
+    transactions_file_path = os.getenv("transactions_file_path")
+    accounts_file_path = os.getenv("accounts_file_path")
+
+    if not transactions_file_path or not accounts_file_path:
+        raise ValueError("Both transactions_file_path and accounts_file_path are required.")
+
+    transaction_dataframe = load_file(transactions_file_path)
+    account_dataframe = load_file(accounts_file_path)
+
+    transaction_dataframe = transaction_dataframe.copy()
+    account_dataframe = account_dataframe.copy()
+
+    temp_dataframe = transaction_dataframe.merge(
+        account_dataframe,
+        how="inner",
+        left_on="SENDER_ACCOUNT_ID",
+        right_on="ACCOUNT_ID",
+        suffixes=('', '_ACCOUNT')  # Keeps transaction names clean where both have same feature names such as IS_FRAUD
+    )[
+        [
+            "SENDER_ACCOUNT_ID",
+            "RECEIVER_ACCOUNT_ID",
+            "TX_AMOUNT",
+            "TIMESTAMP",
+            "IS_FRAUD",
+            "INIT_BALANCE",
+            "TX_BEHAVIOR_ID",
+        ]
+    ].rename(
+        columns={
+            "INIT_BALANCE": "SENDER_INIT_BALANCE",
+            "TX_BEHAVIOR_ID": "SENDER_TX_BEHAVIOR_ID",
+        }
+    )
+
+    final_dataframe = temp_dataframe.merge(
+        account_dataframe,
+        how="inner",
+        left_on="RECEIVER_ACCOUNT_ID",
+        right_on="ACCOUNT_ID",
+        suffixes=('', '_ACCOUNT')  # Keeps transaction names clean where both have same feature names such as IS_FRAUD
+    )[
+        [
+            "SENDER_ACCOUNT_ID",
+            "RECEIVER_ACCOUNT_ID",
+            "TX_AMOUNT",
+            "TIMESTAMP",
+            "IS_FRAUD",
+            "SENDER_INIT_BALANCE",
+            "SENDER_TX_BEHAVIOR_ID",
+            "INIT_BALANCE",
+            "TX_BEHAVIOR_ID",
+        ]
+    ].rename(
+        columns={
+            "INIT_BALANCE": "RECEIVER_INIT_BALANCE",
+            "TX_BEHAVIOR_ID": "RECEIVER_TX_BEHAVIOR_ID",
+        }
+    )
+
+    return final_dataframe
+
+
 def wrangle_data(save: bool = True) -> pd.DataFrame:
-    df = load_file()
+    df = load_merged_transactions_accounts()
     df = add_velocity_features(df)
     df = drop_columns(df)
     df = drop_correlated_features(df)
