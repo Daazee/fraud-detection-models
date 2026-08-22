@@ -186,7 +186,7 @@ def wrangle_data(save: bool = True) -> pd.DataFrame:
     df = encode_target(df)
 
     if save:
-        out = PROJECT_ROOT / "data" / "processed" / "transactions_processed.csv"
+        out = PROJECT_ROOT / "data" / "processed" / "merged_transactions_accounts_processed.csv"
         out.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(out, index=False)
 
