@@ -7,7 +7,7 @@ def build_model() -> IsolationForest:
     return IsolationForest(
         contamination=CONTAMINATION,
         random_state=42,
-        n_jobs=-1,
+        n_jobs=-1
     )
 
 
