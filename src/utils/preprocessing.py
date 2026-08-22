@@ -17,7 +17,8 @@ SKEW_THRESHOLD = 1.0
 
 
 def drop_columns(df: pd.DataFrame) -> pd.DataFrame:
-    cols = [c for c in ID_COLS + LEAKY_COLS + CONSTANT_COLS  if c in df.columns]
+    # this does not apply to all features as leaky and constant features have been droped within the merged datasets functions 
+    cols = [c for c in ID_COLS + LEAKY_COLS + CONSTANT_COLS + ENGINEERED_SOURCE_COLS  if c in df.columns]
     return df.drop(columns=cols)
 
 
