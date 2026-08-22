@@ -49,8 +49,8 @@ def add_velocity_features(df: pd.DataFrame) -> pd.DataFrame:
         df.groupby(["SENDER_ACCOUNT_ID", "TIMESTAMP"])["TX_AMOUNT"]
         .transform("count")
     )
-    df["SENDER_TOTAL_COUNT"] = (
-        df.groupby("SENDER_ACCOUNT_ID")["TX_AMOUNT"]
+    df["RECEIVER_STEP_COUNT"] = (
+        df.groupby(["RECEIVER_ACCOUNT_ID", "TIMESTAMP"])["TX_AMOUNT"]
         .transform("count")
     )
     df["SENDER_RECEIVER_PAIR_COUNT"] = (
