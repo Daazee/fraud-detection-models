@@ -7,7 +7,38 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     f1_score,
+    precision_recall_curve,
 )
+
+
+def find_best_threshold(y_true, y_score, beta: float = 1.0) -> dict:
+    """
+    Sweep classification thresholds and return the one that maximizes F-beta.
+
+    beta=1.0 -> F1 (precision/recall weighted equally).
+    beta>1.0 -> weights recall higher, appropriate for fraud where missing a
+                fraud case (FN) is usually costlier than a false alarm (FP).
+
+    Fit this on a VALIDATION set (never the test set) - the returned
+    threshold should then be applied as a fixed constant when scoring
+    held-out test data, e.g.:
+
+        y_pred = (y_score_test >= result["threshold"]).astype(int)
+    """
+    precision, recall, thresholds = precision_recall_curve(y_true, y_score)
+    precision, recall = precision[:-1], recall[:-1]  # drop the threshold=inf point
+
+    beta_sq = beta ** 2
+    f_scores = (1 + beta_sq) * (precision * recall) / (beta_sq * precision + recall + 1e-12)
+
+    best_idx = np.nanargmax(f_scores)
+    return {
+        "threshold": float(thresholds[best_idx]),
+        "f_score":   float(f_scores[best_idx]),
+        "precision": float(precision[best_idx]),
+        "recall":    float(recall[best_idx]),
+        "beta":      beta,
+    }
 
 
 def _compute_metrics(y_test, y_pred, y_score, model_name: str) -> dict:
@@ -47,15 +78,24 @@ def _print_results(metrics: dict, y_test, y_pred) -> None:
     print(f"  Actual Fraud     {cm[1,0]:>8}         {cm[1,1]:>8}")
 
 
-def evaluate(model, X_test, y_test, model_name: str = "Model") -> dict:
-    y_pred = model.predict(X_test)
-
+def evaluate(model, X_test, y_test, model_name: str = "Model", threshold: float | None = None) -> dict:
     if hasattr(model, "predict_proba"):
         y_score = model.predict_proba(X_test)[:, 1]
     elif hasattr(model, "decision_function"):
         y_score = model.decision_function(X_test)
     else:
-        y_score = y_pred.astype(float)
+        y_score = None
+
+    if threshold is not None:
+        # Use a threshold tuned on a validation set (e.g. via find_best_threshold)
+        # instead of sklearn's default 0.5 cutoff.
+        if y_score is None:
+            raise ValueError("model has neither predict_proba nor decision_function; cannot apply a custom threshold")
+        y_pred = (y_score >= threshold).astype(int)
+    else:
+        y_pred = model.predict(X_test)
+        if y_score is None:
+            y_score = y_pred.astype(float)
 
     metrics = _compute_metrics(y_test, y_pred, y_score, model_name)
     #_print_results(metrics, y_test, y_pred)
