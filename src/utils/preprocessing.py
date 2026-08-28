@@ -174,9 +174,15 @@ def load_merged_transactions_accounts():
 
     return final_dataframe
 
+def sort_chronologically(df):
+    df = df.copy
+    #sort values by TIMESTAMP and Rebuilds the row numbers (index) starting from 0 and drop the index column
+    df = df.sort_values("TIMESTAMP").reset_index(drop=True)
+    return df
 
 def wrangle_data(save: bool = True) -> pd.DataFrame:
     df = load_merged_transactions_accounts()
+    df = sort_chronologically(df)
     df = add_velocity_features(df)
     df = drop_columns(df)
     df = drop_correlated_features(df)
