@@ -175,7 +175,7 @@ def load_merged_transactions_accounts():
     return final_dataframe
 
 def sort_chronologically(df):
-    df = df.copy
+    df = df.copy()
     #sort values by TIMESTAMP and Rebuilds the row numbers (index) starting from 0 and drop the index column
     df = df.sort_values("TIMESTAMP").reset_index(drop=True)
     return df
