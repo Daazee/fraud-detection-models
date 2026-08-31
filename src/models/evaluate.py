@@ -113,12 +113,14 @@ def evaluate_anomaly(model, X_test, y_test, model_name) -> dict:
     return metrics
 
 
-def identify_best_model(results: list[dict]) -> None:
+def identify_best_model(results: list[dict], sort_by_performance = False) -> None:
     df = pd.DataFrame(results).set_index("model")
 
     best_pr  = df["pr_auc"].idxmax()
     best_f1  = df["f1_score"].idxmax()
-
+    df["rank"] = df["pr_auc"].rank(ascending=False) + df["f1_score"].rank(ascending=False)
+    if(sort_by_performance == True):
+        df = df.sort_values(by=["pr_auc", "f1_score"], ascending=False)
     print("\n\n── Model Comparison ─────────────────────────────────────")
     print(df[["precision", "recall", "f1_score", "fpr", "fnr", "roc_auc", "pr_auc"]].to_string())
 
