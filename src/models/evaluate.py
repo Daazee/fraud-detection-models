@@ -40,6 +40,20 @@ def find_best_threshold(y_true, y_score, beta: float = 1.0) -> dict:
         "beta":      beta,
     }
 
+def find_anomaly_optimal_threshold(y_val, y_score,):
+    # note that y_score should already be inverted
+    # Precision/recall across thresholds on the ALREADY-inverted scale
+    precisions, recalls, thresholds = precision_recall_curve(y_val, y_score)
+
+    # F1 across those thresholds (note: len(thresholds) == len(precisions) - 1)
+    f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-10)
+
+    # Guard against the last index, which has no corresponding threshold
+    f1_scores_for_argmax = f1_scores[:-1]
+    best_idx = np.argmax(f1_scores_for_argmax)
+
+    optimal_iso_threshold = thresholds[best_idx]
+    return optimal_iso_threshold
 
 def _compute_metrics(y_test, y_pred, y_score, model_name: str) -> dict:
     cm = confusion_matrix(y_test, y_pred)
@@ -129,7 +143,7 @@ def identify_best_model(results: list[dict], sort_by_performance = False) -> Non
     print(f"  By F1-Score : {best_f1:<25} ({df.loc[best_f1,  'f1_score']:.4f})")
 
     # Overall winner: ranks by both metrics combined
-    df["rank"] = df["pr_auc"].rank(ascending=False) + df["f1_score"].rank(ascending=False)
+    
     overall_best = df["rank"].idxmin()
     print(f"\n  Overall best (PR-AUC + F1): {overall_best}")
     return overall_best
