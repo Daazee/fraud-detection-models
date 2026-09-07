@@ -56,8 +56,8 @@ def find_anomaly_optimal_threshold(y_val, y_score,):
     return optimal_iso_threshold
 
 def _compute_metrics(y_test, y_pred, y_score, model_name: str) -> dict:
-    cm = confusion_matrix(y_test, y_pred)
-    tn, fp, fn, tp = cm.ravel()
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    tn, fp, fn, tp = conf_matrix.ravel()
 
     fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
     fnr = fn / (fn + tp) if (fn + tp) > 0 else 0.0
@@ -85,11 +85,11 @@ def _print_results(metrics: dict, y_test, y_pred) -> None:
     print(f"  PR-AUC             : {metrics['pr_auc']:.4f}  <- primary metric")
     print(f"  False Positive Rate: {metrics['fpr']:.4f}  (legit flagged as fraud)")
     print(f"  False Negative Rate: {metrics['fnr']:.4f}  (fraud missed)")
-    cm = confusion_matrix(y_test, y_pred)
+    conf_matrix = confusion_matrix(y_test, y_pred)
     print(f"\n  Confusion Matrix:")
     print(f"               Predicted Legit  Predicted Fraud")
-    print(f"  Actual Legit     {cm[0,0]:>8}         {cm[0,1]:>8}")
-    print(f"  Actual Fraud     {cm[1,0]:>8}         {cm[1,1]:>8}")
+    print(f"  Actual Legit     {conf_matrix[0,0]:>8}         {conf_matrix[0,1]:>8}")
+    print(f"  Actual Fraud     {conf_matrix[1,0]:>8}         {conf_matrix[1,1]:>8}")
 
 
 def evaluate(model, X_test, y_test, model_name: str = "Model", threshold: float | None = None) -> dict:
