@@ -77,7 +77,7 @@ def main():
     overall_best_classifier_model_name = identify_best_model(results)
 
     # Identify best classifier for Hybrid model 
-    best_model = (
+    best_classifier_model = (
                 lr if overall_best_classifier_model_name == "Logistic Regression" 
                 else rf if overall_best_classifier_model_name == "Random Forest" else 
                 xgb if overall_best_classifier_model_name == "XGBoost" else None
@@ -85,12 +85,12 @@ def main():
 
     # --- Hybrid: fuse best_model + iso, tuning w dynamically on X_validation ---
     print("Hybrid Model...")
-    hybrid = train_hybrid_model(best_model, iso, X_validation, y_validation)
+    hybrid = train_hybrid_model(best_classifier_model, iso, X_validation, y_validation)
 
     # --- Final, one-time evaluation on X_test ---
     print("\n=== Final evaluation on held-out X_test ===")
     final_results = []
-    final_results.append(evaluate(best_model, X_test, y_test, overall_best_classifier_model_name))
+    final_results.append(evaluate(best_classifier_model, X_test, y_test, overall_best_classifier_model_name))
     final_results.append(evaluate_anomaly(iso, X_test, y_test, "Isolation Forest"))
     final_results.append(evaluate(hybrid, X_test, y_test, "Hybrid (Weighted Average)"))
 
