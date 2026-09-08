@@ -73,7 +73,7 @@ fraud-detection-models/
 │   │   └── shap_interpretation.py               # SHAP TreeExplainer helpers + stratified test sampling
 │   ├── utils/preprocessing.py                   # wrangle_data(): merge, feature engineering, cleaning
 │   └── main.py                                  # pipeline entrypoint (preprocess / train / evaluate / hybrid)
-├── reports/                                     # written report (IPR,FPR) - PDF/DOCX
+├── reports/                                     # written report (Interim/Final Project Report - IPR, FPR) - PDF/DOCX
 ├── requirements.txt
 ├── .env.example                                 # example env variables
 └── README.md
