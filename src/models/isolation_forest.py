@@ -1,6 +1,6 @@
 from sklearn.ensemble import IsolationForest
 
-CONTAMINATION = 0.0013  # observed fraud rate of 0.13%
+CONTAMINATION = 0.001331  # observed fraud rate of 0.1331% from the training data (i.e., 0.001331)
 
 
 def build_model() -> IsolationForest:
