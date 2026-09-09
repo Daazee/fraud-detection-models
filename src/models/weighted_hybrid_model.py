@@ -81,7 +81,7 @@ class WeightedAverageHybrid:
             if f1 > best_f1:
                 best_f1, best_threshold = f1, t
 
-        self.best_threshold_ = best_threshold
+        self.best_threshold_ = round(float(best_threshold), 4)
         self.best_f1_ = best_f1
 
         return self
