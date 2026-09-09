@@ -33,10 +33,10 @@ def find_best_threshold(y_true, y_score, beta: float = 1.0) -> dict:
 
     best_idx = np.nanargmax(f_scores)
     return {
-        "threshold": float(thresholds[best_idx]),
-        "f_score":   float(f_scores[best_idx]),
-        "precision": float(precision[best_idx]),
-        "recall":    float(recall[best_idx]),
+        "threshold": round(float(thresholds[best_idx]), 4),
+        "f_score":   round(float(f_scores[best_idx]), 4),
+        "precision": round(float(precision[best_idx]), 4),
+        "recall":    round(float(recall[best_idx]), 4),
         "beta":      beta,
     }
 
@@ -46,7 +46,7 @@ def find_anomaly_optimal_threshold(y_val, y_score,):
     precisions, recalls, thresholds = precision_recall_curve(y_val, y_score)
 
     # F1 across those thresholds (note: len(thresholds) == len(precisions) - 1)
-    f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-10)
+    f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-12)
 
     # Guard against the last index, which has no corresponding threshold
     f1_scores_for_argmax = f1_scores[:-1]
@@ -116,11 +116,18 @@ def evaluate(model, X_test, y_test, model_name: str = "Model", threshold: float 
     return metrics
 
 
-def evaluate_anomaly(model, X_test, y_test, model_name) -> dict:
-    # -1 = anomaly (fraud=1), 1 = normal (legit=0)
-    y_pred = np.where(model.predict(X_test) == -1, 1, 0)
+def evaluate_anomaly(model, X_test, y_test, model_name, optimal_score: float | None = None) -> dict:
     # Negate: higher score = more anomalous = higher fraud probability
     y_score = -model.decision_function(X_test)
+
+    if optimal_score is not None:
+        # Threshold tuned on the validation set (via find_anomaly_optimal_threshold),
+        # applied on the same negated scale precision_recall_curve used: y_score >= t
+        y_pred = (y_score >= optimal_score).astype(int)
+    else:
+        # Default boundary from the model's contamination setting.
+        # -1 = anomaly (fraud=1), 1 = normal (legit=0)
+        y_pred = np.where(model.predict(X_test) == -1, 1, 0)
 
     metrics = _compute_metrics(y_test, y_pred, y_score, model_name)
     #_print_results(metrics, y_test, y_pred)
