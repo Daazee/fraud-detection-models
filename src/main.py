@@ -121,6 +121,8 @@ def main():
     print("\n=== Final evaluation on held-out X_test ===")
     final_results = []
     final_results.append(evaluate(best_classifier_model, X_test, y_test, overall_best_classifier_model_name, best_threshold))
+    final_results.append(evaluate(logistic_regression_pipeline, X_test, y_test, "Logistic Regression", lr_threshold_result["threshold"]))
+    final_results.append(evaluate(xgboost_pipeline, X_test, y_test, "XGBoost", xgb_threshold_result["threshold"]))
     final_results.append(evaluate_anomaly(isolation_forest_model, X_test, y_test, "Isolation Forest", optimal_iso_threshold))
     final_results.append(evaluate(weighted_avg_model, X_test, y_test, "Hybrid (Weighted Average)"))
     final_results.append(evaluate(cascade_model, X_test, y_test, "Hybrid (Cascade Hybrid)"))
