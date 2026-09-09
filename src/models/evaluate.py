@@ -40,20 +40,24 @@ def find_best_threshold(y_true, y_score, beta: float = 1.0) -> dict:
         "beta":      beta,
     }
 
-def find_anomaly_optimal_threshold(y_val, y_score,):
-    # note that y_score should already be inverted
+def find_anomaly_optimal_threshold(y_val, y_score, beta: float = 1.0):
+    # note that y_score should already be inverted (higher = more anomalous = more likely fraud)
     # Precision/recall across thresholds on the ALREADY-inverted scale
     precisions, recalls, thresholds = precision_recall_curve(y_val, y_score)
 
-    # F1 across those thresholds (note: len(thresholds) == len(precisions) - 1)
-    f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-12)
+    # F-beta across those thresholds (note: len(thresholds) == len(precisions) - 1).
+    # beta=1 -> F1; beta>1 -> weights recall higher, appropriate for fraud where a
+    # missed fraud (FN) is costlier than a false alarm (FP).
+    beta_sq = beta ** 2
+    f_scores = (1 + beta_sq) * (precisions * recalls) / (beta_sq * precisions + recalls + 1e-12)
 
     # Guard against the last index, which has no corresponding threshold
-    f1_scores_for_argmax = f1_scores[:-1]
-    best_idx = np.argmax(f1_scores_for_argmax)
+    f_scores_for_argmax = f_scores[:-1]
+    best_idx = np.argmax(f_scores_for_argmax)
 
     optimal_iso_threshold = thresholds[best_idx]
-    return optimal_iso_threshold
+    return round(float(optimal_iso_threshold), 4)
+
 
 def _compute_metrics(y_test, y_pred, y_score, model_name: str) -> dict:
     conf_matrix = confusion_matrix(y_test, y_pred)
