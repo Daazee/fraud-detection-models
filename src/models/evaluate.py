@@ -138,42 +138,25 @@ def evaluate_anomaly(model, X_test, y_test, model_name, optimal_score: float | N
     return metrics
 
 
-def identify_best_model(results: list[dict], sort_by_performance = False) -> None:
+def identify_best_model(results: list[dict], sort_by_performance: bool = False) -> str:
     df = pd.DataFrame(results).set_index("model")
 
-    best_pr  = df["pr_auc"].idxmax()
-    best_f1  = df["f1_score"].idxmax()
-    df["rank"] = df["pr_auc"].rank(ascending=False) + df["f1_score"].rank(ascending=False)
-    if(sort_by_performance == True):
-        df = df.sort_values(by=["pr_auc", "f1_score"], ascending=False)
-    print("\n\n── Model Comparison ─────────────────────────────────────")
+    best_pr = df["pr_auc"].idxmax()
+    best_f1 = df["f1_score"].idxmax()
+
+    df["pr_auc_and_f1_score"] = (df["pr_auc"] + df["f1_score"]) / 2
+
+    if sort_by_performance:
+        df = df.sort_values(by=["pr_auc_and_f1_score"], ascending=False)
+
+    print("\n\n── Model Comparison ------------")
     print(df[["precision", "recall", "f1_score", "fpr", "fnr", "roc_auc", "pr_auc"]].to_string())
 
     print("\n── Best Model ───────────────────────────────────────────")
     print(f"  By PR-AUC   : {best_pr:<25} ({df.loc[best_pr,  'pr_auc']:.4f})")
     print(f"  By F1-Score : {best_f1:<25} ({df.loc[best_f1,  'f1_score']:.4f})")
 
-    # Overall winner: ranks by both metrics combined
-    
-    overall_best = df["rank"].idxmin()
-    print(f"\n  Overall best (PR-AUC + F1): {overall_best}")
-    return overall_best
+    combined_best = df["pr_auc_and_f1_score"].idxmax()
+    print(f"\nOverall best (PR-AUC + F1 average): {combined_best}  ({df.loc[combined_best, 'pr_auc_and_f1_score']:.5f})")
 
-def print_final_results(results: list[dict]) -> None:
-    df = pd.DataFrame(results).set_index("model")
-
-    final_best_pr  = df["pr_auc"].idxmax()
-    final_best_f1  = df["f1_score"].idxmax()
-
-    print("\n\n── Model Comparison ─────────────────────────────────────")
-    print(df[["precision", "recall", "f1_score", "fpr", "fnr", "roc_auc", "pr_auc"]].to_string())
-
-    print("\n── Best Model ───────────────────────────────────────────")
-    print(f"  By PR-AUC   : {final_best_pr:<25} ({df.loc[final_best_pr,  'pr_auc']:.4f})")
-    print(f"  By F1-Score : {final_best_f1:<25} ({df.loc[final_best_f1,  'f1_score']:.4f})")
-
-    # Overall winner: ranks by both metrics combined
-    df["rank"] = df["pr_auc"].rank(ascending=False) + df["f1_score"].rank(ascending=False)
-    final_best = df["rank"].idxmin()
-    print(f"\n  Final best (PR-AUC + F1): {final_best}")
-
+    return combined_best
