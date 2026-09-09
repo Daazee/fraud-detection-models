@@ -132,7 +132,7 @@ python src\main.py
 - trains Logistic Regression, Random Forest, XGBoost, Isolation Forest and a most-frequent Dummy baseline on the training block
 - compares them on the **validation** block and selects the best classifier by combined PR-AUC + F1 rank (`identify_best_model`)
 - trains `WeightedAverageHybrid` on the validation block (tunes the fusion weight and threshold there)
-- runs a single, final evaluation of the best classifier, Isolation Forest and the hybrid on the **held-out test** block (`print_final_results`)
+- runs a single, final evaluation of the best classifier, Isolation Forest and the hybrid on the **held-out test** block (`identify_best_model`)
 
 ---
 
@@ -158,7 +158,7 @@ Evaluation utilities live in `src/models/evaluate.py`:
 - `evaluate_anomaly(model, X, y, name)` - maps Isolation Forest's `-1/1` output to `1/0` and negates `decision_function` so higher = more suspicious
 - `find_best_threshold(y, score, beta)` - sweeps the precision-recall curve for the F-beta-optimal threshold (fit on validation)
 - `find_anomaly_optimal_threshold(y, score)` - F1-optimal threshold on already-inverted anomaly scores
-- `identify_best_model(results)` / `print_final_results(results)` - model-comparison tables ranked by PR-AUC + F1
+- `identify_best_model(results)` / `identify_best_model(results)` - model-comparison tables ranked by PR-AUC + F1
 
 Metrics reported for every model: Precision, Recall, F1-score, FPR, FNR, ROC-AUC, PR-AUC, plus the confusion matrix. **PR-AUC is the primary metric** (preferred under extreme class imbalance); FNR (missed fraud) is the secondary priority.
 
@@ -202,7 +202,7 @@ The table/figure numbers below follow the written report's Results chapter; if t
 |-------------|-------------|---------------------|
 | **Table 4.1** - Model performance comparison (Logistic Regression, Random Forest, XGBoost, Isolation Forest, Dummy baseline) | `notebooks/ibm_bank_trans_03_model_training.ipynb` (validation comparison cell, `identify_best_model`) and `python src\main.py` (validation `── Model Comparison ──` block) | Each model is trained on the training block and scored on the validation block via `evaluate` / `evaluate_anomaly`; metrics are precision, recall, F1, FPR, FNR, ROC-AUC, PR-AUC |
 | **Table 4.2** - Hybrid fusion strategy comparison on validation (Weighted Average, Feature-Level Fusion, Cascade, Threshold OR-Rule, Soft Voting) | `notebooks/ibm_bank_trans_04_hybrid_models.ipynb` (`validation_results` / `identify_best_model` cells) | All five strategies wrap the same Random Forest + Isolation Forest and are scored on the validation block with the same metrics; the best by PR-AUC + F1 rank is carried forward |
-| **Table 4.3** - Final held-out test-set results (best supervised model vs Isolation Forest vs best hybrid) | `notebooks/ibm_bank_trans_04_hybrid_models.ipynb` (`final_test_results` / `print_final_results` cell) and `python src\main.py` (`=== Final evaluation on held-out X_test ===` block) | One-time scoring of the selected models on the test block |
+| **Table 4.3** - Final held-out test-set results (best supervised model vs Isolation Forest vs best hybrid) | `notebooks/ibm_bank_trans_04_hybrid_models.ipynb` (`identify_best_model` / `identify_best_model` cell) and `python src\main.py` (`=== Final evaluation on held-out X_test ===` block) | One-time scoring of the selected models on the test block |
 | **Table 4.4** - SHAP global feature importance (mean absolute SHAP value per feature, fraud class) | `notebooks/ibm_bank_trans_06_shap_explainability.ipynb` (`mean_abs_shap` cell) | `explain_model` on the Random Forest over the 5,000-row stratified test sample; features ranked by `np.abs(shap_values[:, :, 1]).mean(axis=0)` |
 | Complementarity analysis (fraction of each model's missed fraud that the other model catches) | `notebooks/ibm_bank_trans_05_complementarity_analysis.ipynb` | Random Forest (threshold 0.40) and Isolation Forest (F1-optimal threshold) predictions on the test block are cross-tabulated against the true label; `rf_misses` / `iso_misses` overlap fractions are reported |
 | SHAP beeswarm / summary / waterfall figures | `notebooks/ibm_bank_trans_06_shap_explainability.ipynb` (`shap.plots.beeswarm`, `shap.summary_plot`, `shap.plots.waterfall` cells) | Same SHAP values as Table 4.4 |
