@@ -1,15 +1,13 @@
 import argparse
 import pandas as pd
 from pathlib import Path
-from sklearn.model_selection import train_test_split
 from sklearn.dummy import DummyClassifier
-
 from utils.preprocessing import wrangle_data
 from models.logistic_regression import train as train_logistic_regression
 from models.random_forest import train as train_random_forest
 from models.xgboost_model import train as train_xgboost
 from models.isolation_forest import train as train_isolation_forest
-from models.evaluate import evaluate, evaluate_anomaly, identify_best_model, print_final_results
+from models.evaluate import evaluate, evaluate_anomaly, find_anomaly_optimal_threshold, find_best_threshold, identify_best_model, print_final_results
 from models.weighted_hybrid_model import train as train_hybrid_model
 
 PROCESSED = Path(__file__).parents[1] / "data" / "processed" / "merged_transactions_accounts_processed.csv"
@@ -51,47 +49,67 @@ def main():
     print(f"Fraud rate — train: {y_train.mean():.4%}  test: {y_test.mean():.4%}\n")
 
     print("Training Logistic Regression...")
-    lr = train_logistic_regression(X_train, y_train)
+    logistic_regression_pipeline = train_logistic_regression(X_train, y_train)
 
     print("Training Random Forest...")
-    rf = train_random_forest(X_train, y_train)
+    random_forest_pipeline = train_random_forest(X_train, y_train)
 
     print("Training XGBoost...")
-    xgb = train_xgboost(X_train, y_train)
+    xgboost_pipeline = train_xgboost(X_train, y_train)
 
     print("Training Isolation Forest...")
-    iso = train_isolation_forest(X_train)
+    isolation_forest_model = train_isolation_forest(X_train)
 
     print("Training Dummy Baseline...")
     dummy = DummyClassifier(strategy="most_frequent", random_state=42)
     dummy.fit(X_train, y_train)
 
-    # Evaluation
+    # predicting probabilities and scores for validation set
+    logistic_regression_val_probs = logistic_regression_pipeline.predict_proba(X_validation)[:, 1]
+    random_forest_val_probs = random_forest_pipeline.predict_proba(X_validation)[:, 1]
+    xgboost_val_probs = xgboost_pipeline.predict_proba(X_validation)[:, 1]
+    isolation_forest_val_scores = -isolation_forest_model.decision_function(X_validation)
+
+    # Find best thresholds for classifiers and Isolation Forest
+    lr_threshold_result = find_best_threshold(y_validation, logistic_regression_val_probs, beta=1.0)
+    rf_threshold_result = find_best_threshold(y_validation, random_forest_val_probs, beta=1.0)
+    xgb_threshold_result = find_best_threshold(y_validation, xgboost_val_probs, beta=1.0)
+    optimal_iso_threshold = find_anomaly_optimal_threshold(y_validation, isolation_forest_val_scores)
+
+    # Validation set Evaluation
     results = []
     results.append(evaluate(dummy, X_validation, y_validation, "Dummy (Baseline)"))
-    results.append(evaluate(lr, X_validation, y_validation, "Logistic Regression"))
-    results.append(evaluate(rf, X_validation, y_validation, "Random Forest"))
-    results.append(evaluate(xgb, X_validation, y_validation, "XGBoost"))
-    results.append(evaluate_anomaly(iso, X_validation, y_validation, "Isolation Forest"))
+    results.append(evaluate(logistic_regression_pipeline, X_validation, y_validation, "Logistic Regression", lr_threshold_result["threshold"]))
+    results.append(evaluate(random_forest_pipeline, X_validation, y_validation, "Random Forest", rf_threshold_result["threshold"]))
+    results.append(evaluate(xgboost_pipeline, X_validation, y_validation, "XGBoost", xgb_threshold_result["threshold"]))
+    results.append(evaluate_anomaly(isolation_forest_model, X_validation, y_validation, "Isolation Forest", optimal_iso_threshold))
 
-    overall_best_classifier_model_name = identify_best_model(results)
+    overall_best_classifier_model_name = identify_best_model(results, sort_by_performance=True)
 
     # Identify best classifier for Hybrid model 
     best_classifier_model = (
-                lr if overall_best_classifier_model_name == "Logistic Regression" 
-                else rf if overall_best_classifier_model_name == "Random Forest" else 
-                xgb if overall_best_classifier_model_name == "XGBoost" else None
+                logistic_regression_pipeline if overall_best_classifier_model_name == "Logistic Regression" 
+                else random_forest_pipeline if overall_best_classifier_model_name == "Random Forest" else 
+                xgboost_pipeline if overall_best_classifier_model_name == "XGBoost" else None
+    )
+
+    # get best threshold for the best classifier
+    best_threshold = (
+        lr_threshold_result["threshold"] if overall_best_classifier_model_name == "Logistic Regression" 
+        else rf_threshold_result["threshold"] if overall_best_classifier_model_name == "Random Forest" 
+        else xgb_threshold_result["threshold"] if overall_best_classifier_model_name == "XGBoost" 
+        else None
     )
 
     # --- Hybrid: fuse best_model + iso, tuning w dynamically on X_validation ---
     print("Hybrid Model...")
-    hybrid = train_hybrid_model(best_classifier_model, iso, X_validation, y_validation)
+    hybrid = train_hybrid_model(best_classifier_model, isolation_forest_model, X_validation, y_validation)
 
     # --- Final, one-time evaluation on X_test ---
     print("\n=== Final evaluation on held-out X_test ===")
     final_results = []
-    final_results.append(evaluate(best_classifier_model, X_test, y_test, overall_best_classifier_model_name))
-    final_results.append(evaluate_anomaly(iso, X_test, y_test, "Isolation Forest"))
+    final_results.append(evaluate(best_classifier_model, X_test, y_test, overall_best_classifier_model_name, best_threshold))
+    final_results.append(evaluate_anomaly(isolation_forest_model, X_test, y_test, "Isolation Forest", optimal_iso_threshold))
     final_results.append(evaluate(hybrid, X_test, y_test, "Hybrid (Weighted Average)"))
 
     print_final_results(final_results)
