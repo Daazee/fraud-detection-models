@@ -77,8 +77,15 @@ def main():
     xgb_threshold_result = find_best_threshold(y_validation, xgboost_val_probs, beta=1.0)
     optimal_iso_threshold = find_anomaly_optimal_threshold(y_validation, isolation_forest_val_scores)
 
+    print("\n── Tuned decision thresholds (from validation) ──────────")
+    print(f"  Logistic Regression : {lr_threshold_result['threshold']:.4f}")
+    print(f"  Random Forest       : {rf_threshold_result['threshold']:.4f}")
+    print(f"  XGBoost             : {xgb_threshold_result['threshold']:.4f}")
+    print(f"  Isolation Forest    : {optimal_iso_threshold:.4f}")
+
+
     # Validation set Evaluation
-    print("\n=== Validation evaluation on held-out X_validation ===")
+    print("\n=== Evaluation on held-out X_validation ===")
     validation_results = []
     validation_results.append(evaluate(dummy, X_validation, y_validation, "Dummy (Baseline)"))
     validation_results.append(evaluate(logistic_regression_pipeline, X_validation, y_validation, "Logistic Regression", lr_threshold_result["threshold"]))
@@ -102,22 +109,21 @@ def main():
         else xgb_threshold_result["threshold"] if overall_best_classifier_model_name == "XGBoost" 
         else None
     )
-    print()
-    print("Fitting Hybrid Models...")
-    # --- Hybrid: fuse best_model + iso, tuning w dynamically on X_validation ---
+ 
+    print("Fitting Hybrid Models...\n")
     print("Fitting Weighted Average Hybrid Model...")
-    hybrid = train_weighted_average_hybrid_model(best_classifier_model, isolation_forest_model, X_validation, y_validation)
+    weighted_avg_model = train_weighted_average_hybrid_model(best_classifier_model, isolation_forest_model, X_validation, y_validation)
 
     print("Fitting Cascade Hybrid Model Band...")
     cascade_model = train_cascade_hybrid_model(best_classifier_model, isolation_forest_model, X_validation, y_validation)
-
+    
     # --- Final, one-time evaluation on X_test ---
     print("\n=== Final evaluation on held-out X_test ===")
     final_results = []
     final_results.append(evaluate(best_classifier_model, X_test, y_test, overall_best_classifier_model_name, best_threshold))
     final_results.append(evaluate_anomaly(isolation_forest_model, X_test, y_test, "Isolation Forest", optimal_iso_threshold))
-    final_results.append(evaluate(hybrid, X_test, y_test, "Hybrid (Weighted Average)"))
-    final_results.append(evaluate(cascade_model, X_test, y_test, "Cascade Hybrid"))
+    final_results.append(evaluate(weighted_avg_model, X_test, y_test, "Hybrid (Weighted Average)"))
+    final_results.append(evaluate(cascade_model, X_test, y_test, "Hybrid (Cascade Hybrid)"))
 
     identify_best_model(final_results, sort_by_performance=True)
 if __name__ == "__main__":

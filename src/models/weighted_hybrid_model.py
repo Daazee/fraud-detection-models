@@ -102,5 +102,5 @@ def train(classifier, isolation_forest, X_val, y_val, w_grid=None) -> WeightedAv
     # Both classifier and isolation_forest must already be fitted on same training set
     hybrid = WeightedAverageHybrid(classifier, isolation_forest)
     hybrid.fit_weight(X_val, y_val, w_grid=w_grid)
-    print(f"Selected weight = {hybrid.weight_:.2f}  (validation PR-AUC = {hybrid.val_pr_auc_:.4f})")
+    print(f"Selected weight = {hybrid.weight_:.2f}, threshold = {hybrid.best_threshold_}, val PR-AUC = {hybrid.val_pr_auc_:.4f})\n")
     return hybrid

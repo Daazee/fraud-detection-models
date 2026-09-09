@@ -157,6 +157,6 @@ def identify_best_model(results: list[dict], sort_by_performance: bool = False) 
     print(f"  By F1-Score : {best_f1:<25} ({df.loc[best_f1,  'f1_score']:.4f})")
 
     combined_best = df["pr_auc_and_f1_score"].idxmax()
-    print(f"\nOverall best (PR-AUC + F1 average): {combined_best}  ({df.loc[combined_best, 'pr_auc_and_f1_score']:.5f})")
+    print(f"\nOverall best (PR-AUC + F1 average): {combined_best}  ({df.loc[combined_best, 'pr_auc_and_f1_score']:.5f})\n")
 
     return combined_best

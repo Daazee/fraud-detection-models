@@ -148,5 +148,5 @@ class CascadeHybrid():
 def train(classifier, isolation_forest, X_val, y_val) -> CascadeHybrid:
         cascade_hybrid = CascadeHybrid(classifier, isolation_forest)
         cascade_hybrid.fit_band(X_val, y_val)
-        print(f"Cascade band = ({cascade_hybrid.best_lower_}, {cascade_hybrid.best_upper_}), threshold = {cascade_hybrid.best_threshold_}, val PR-AUC = {cascade_hybrid.best_pr_auc_:.4f}") 
+        print(f"Cascade band = ({cascade_hybrid.best_lower_}, {cascade_hybrid.best_upper_}), threshold = {cascade_hybrid.best_threshold_}, val PR-AUC = {cascade_hybrid.best_pr_auc_:.4f}\n") 
         return cascade_hybrid
