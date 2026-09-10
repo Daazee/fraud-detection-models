@@ -158,7 +158,7 @@ Evaluation utilities live in `src/models/evaluate.py`:
 - `evaluate_anomaly(model, X, y, name)` - maps Isolation Forest's `-1/1` output to `1/0` and negates `decision_function` so higher = more suspicious
 - `find_best_threshold(y, score, beta)` - sweeps the precision-recall curve for the F-beta-optimal threshold (fit on validation)
 - `find_anomaly_optimal_threshold(y, score)` - F1-optimal threshold on already-inverted anomaly scores
-- `identify_best_model(results)` / `identify_best_model(results)` - model-comparison tables ranked by PR-AUC + F1
+- `identify_best_model(results)` / `print_final_results(results)` - model-comparison tables ranked by PR-AUC + F1 (validation and final test respectively)
 
 Metrics reported for every model: Precision, Recall, F1-score, FPR, FNR, ROC-AUC, PR-AUC, plus the confusion matrix. **PR-AUC is the primary metric** (preferred under extreme class imbalance); FNR (missed fraud) is the secondary priority.
 
@@ -176,9 +176,9 @@ Metrics reported for every model: Precision, Recall, F1-score, FPR, FNR, ROC-AUC
 
 The hybrid notebook (`ibm_bank_trans_04_hybrid_models.ipynb`) additionally prototypes four more fusion strategies and selects the best on validation before the single test evaluation:
 
-- **Feature-Level Fusion** - append the inverted Isolation Forest score as an extra Random Forest input feature
-- **Cascade** - Random Forest decides by default; Isolation Forest is consulted only for records whose normalised RF score falls in an uncertain band (band tuned on validation PR-AUC)
-- **Threshold OR-Rule** - flag as fraud if *either* model exceeds its own F1-tuned threshold
+- **Feature-Level Fusion** - append the inverted Isolation Forest score as an extra Random Forest input feature; decision threshold tuned on validation F1 (`find_best_threshold`)
+- **Cascade** - Random Forest decides by default; Isolation Forest is consulted only for records whose normalised RF score falls in an uncertain band (band tuned on validation PR-AUC, then the decision threshold on the fused score tuned on validation F1)
+- **Threshold OR-Rule** - flag as fraud if *either* model exceeds its own F1-tuned threshold (a per-detector threshold pair, not a single cutoff)
 - **Soft Voting** - equal-weight (0.5/0.5) average of the normalised scores, thresholded on validation F1
 
 ---
@@ -196,16 +196,21 @@ The hybrid notebook (`ibm_bank_trans_04_hybrid_models.ipynb`) additionally proto
 
 ## Reproducing the Report Tables and Figures
 
-The table/figure numbers below follow the written report's Results chapter; if the numbering shifts in a later draft, match on the caption/description. All results assume the processed CSV has been built (`python src\main.py --preprocess`) and the temporal split described above.
+The table/figure numbers below follow the written report's Results chapter (Section 4). If the numbering shifts in a later draft, match on the description. All results assume the processed CSV has been built (`python src\main.py --preprocess`) and the temporal split described above. `python src\main.py` reproduces Tables 4.1-4.3 and 4.6; the notebooks reproduce the rest.
 
 | Report item | Produced by | How it is generated |
 |-------------|-------------|---------------------|
-| **Table 4.1** - Model performance comparison (Logistic Regression, Random Forest, XGBoost, Isolation Forest, Dummy baseline) | `notebooks/ibm_bank_trans_03_model_training.ipynb` (validation comparison cell, `identify_best_model`) and `python src\main.py` (validation `── Model Comparison ──` block) | Each model is trained on the training block and scored on the validation block via `evaluate` / `evaluate_anomaly`; metrics are precision, recall, F1, FPR, FNR, ROC-AUC, PR-AUC |
-| **Table 4.2** - Hybrid fusion strategy comparison on validation (Weighted Average, Feature-Level Fusion, Cascade, Threshold OR-Rule, Soft Voting) | `notebooks/ibm_bank_trans_04_hybrid_models.ipynb` (`validation_results` / `identify_best_model` cells) | All five strategies wrap the same Random Forest + Isolation Forest and are scored on the validation block with the same metrics; the best by PR-AUC + F1 rank is carried forward |
-| **Table 4.3** - Final held-out test-set results (best supervised model vs Isolation Forest vs best hybrid) | `notebooks/ibm_bank_trans_04_hybrid_models.ipynb` (`identify_best_model` / `identify_best_model` cell) and `python src\main.py` (`=== Final evaluation on held-out X_test ===` block) | One-time scoring of the selected models on the test block |
-| **Table 4.4** - SHAP global feature importance (mean absolute SHAP value per feature, fraud class) | `notebooks/ibm_bank_trans_06_shap_explainability.ipynb` (`mean_abs_shap` cell) | `explain_model` on the Random Forest over the 5,000-row stratified test sample; features ranked by `np.abs(shap_values[:, :, 1]).mean(axis=0)` |
-| Complementarity analysis (fraction of each model's missed fraud that the other model catches) | `notebooks/ibm_bank_trans_05_complementarity_analysis.ipynb` | Random Forest (threshold 0.40) and Isolation Forest (F1-optimal threshold) predictions on the test block are cross-tabulated against the true label; `rf_misses` / `iso_misses` overlap fractions are reported |
-| SHAP beeswarm / summary / waterfall figures | `notebooks/ibm_bank_trans_06_shap_explainability.ipynb` (`shap.plots.beeswarm`, `shap.summary_plot`, `shap.plots.waterfall` cells) | Same SHAP values as Table 4.4 |
+| **Table 4.1** - Dataset partition sizes (train / validation / test record counts and proportions) | `notebooks/ibm_bank_trans_03_model_training.ipynb`; also printed by `python src\main.py` (`Train: … \| Validation: … \| Test: …` line) | Positional temporal split of the processed CSV: first 64% train, next 16% validation, last 20% test (see Temporal Split) |
+| **Table 4.2** - Per-model validation decision threshold / optimal score (Random Forest, XGBoost, Logistic Regression, Isolation Forest) | `notebooks/ibm_bank_trans_03_model_training.ipynb` (best-threshold print cell) and `python src\main.py` (`── Tuned decision thresholds (from validation) ──` block) | `find_best_threshold(y_validation, val_probs, beta=1.0)` (F1-optimal) for each classifier; `find_anomaly_optimal_threshold(y_validation, -decision_function)` for Isolation Forest |
+| **Table 4.3** - Individual model performance on the validation set (n = 167,772): precision, recall, F1, FPR, FNR, ROC-AUC, PR-AUC for Logistic Regression, Random Forest, XGBoost, Isolation Forest, Dummy baseline | `notebooks/ibm_bank_trans_03_model_training.ipynb` (`identify_best_model`) and `python src\main.py` (`=== Evaluation on held-out X_validation ===` → `── Model Comparison ──`) | Each model trained on the training block, scored on validation via `evaluate` / `evaluate_anomaly` at its Table 4.2 threshold |
+| **Table 4.4** - Per-strategy validation decision threshold for the five hybrids (Weighted Average, Cascade, Feature-Level Fusion, Soft Voting, Threshold OR-Rule) | `notebooks/ibm_bank_trans_04_hybrid_models.ipynb` (hybrid best-threshold print cell) | Each hybrid's cutoff tuned on validation F1; Threshold OR-Rule reports a per-detector pair (Random Forest, Isolation Forest) |
+| **Table 4.5** - Hybrid validation-set results: precision, recall, F1, FPR, FNR, ROC-AUC, PR-AUC for the five strategies | `notebooks/ibm_bank_trans_04_hybrid_models.ipynb` (`validation_results` / `identify_best_model` cells) | All five strategies wrap the same Random Forest + Isolation Forest, scored on the validation block; best by PR-AUC + F1 rank is carried forward |
+| **Table 4.6** - Final held-out test-set comparison (temporal split): Random Forest, Weighted Average, Cascade, XGBoost, Logistic Regression, Isolation Forest | `python src\main.py` (`=== Final evaluation on held-out X_test ===` block) and `notebooks/ibm_bank_trans_04_hybrid_models.ipynb` | One-time scoring of the selected models on the test block at their validation-tuned thresholds |
+| **Table 4.7** - SHAP global feature importance (mean absolute SHAP value per feature, fraud class) | `notebooks/ibm_bank_trans_06_shap_explainability.ipynb` (`mean_abs_shap` cell) | `explain_model` on the Random Forest over the 5,000-row stratified test sample; features ranked by `np.abs(shap_values[:, :, 1]).mean(axis=0)` |
+| **Table 4.8** - Summary of the two local SHAP case studies (Transaction Row 7 legitimate, Row 1897 fraud): base value, predicted class-0 / class-1 probability, largest class-1 contributor | `notebooks/ibm_bank_trans_06_shap_explainability.ipynb` (waterfall cells) | Per-record `shap.plots.waterfall` inputs for one correctly classified legitimate and one fraud transaction drawn from the SHAP sample |
+| **Figure 4.1** - SHAP beeswarm plot (class 1, fraud) | `notebooks/ibm_bank_trans_06_shap_explainability.ipynb` (`shap.plots.beeswarm`) | Same SHAP values as Table 4.7 |
+| **Figures 4.2a-b / 4.3a-b** - Local SHAP waterfall plots for Transaction Row 7 (legitimate) and Row 1897 (fraud), class 0 and class 1 outputs | `notebooks/ibm_bank_trans_06_shap_explainability.ipynb` (`shap.plots.waterfall`) | Per-record explanations for the two Table 4.8 case studies |
+| Complementarity analysis (fraction of each model's missed fraud the other model catches; reported in Section 4.3.2) | `notebooks/ibm_bank_trans_05_complementarity_analysis.ipynb` | Random Forest (threshold 0.40) and Isolation Forest (F1-optimal threshold) predictions on the test block are cross-tabulated against the true label; `rf_misses` / `iso_misses` overlap fractions are reported |
 | Class-imbalance / EDA figures | `notebooks/ibm_bank_trans_01_eda.ipynb`, `notebooks/ibm_bank_accounts_01_eda.ipynb` | Direct plots on the raw files |
 
 ---
