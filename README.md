@@ -86,7 +86,9 @@ fraud-detection-models/
 1. Clone the project
 
 ```bash
+git lfs install # LFS is required to pull the large files i.e the dataset
 git clone https://github.com/Daazee/fraud-detection-models.git
+git lfs pull
 cd fraud-detection-models
 ```
 
